@@ -57,7 +57,7 @@ func init() {
 func initConfig() {
 	// Set environment variable if provided via flag
 	if environment != "" {
-		os.Setenv("APP_ENVIRONMENT", environment)
+		_ = os.Setenv("APP_ENVIRONMENT", environment)
 	}
 
 	// Initialize basic logging for CLI
@@ -99,7 +99,7 @@ var serveCmd = &cobra.Command{
 
 		fmt.Printf("Starting API server on %s:%d...\n", cfg.Server.Host, cfg.Server.Port)
 		fmt.Println("Use Ctrl+C to stop the server")
-		
+
 		// This would normally start the API server
 		// For now, we'll just show the command would work
 		return fmt.Errorf("serve command not fully implemented yet - use 'go run cmd/api/main.go' instead")

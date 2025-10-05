@@ -8,9 +8,9 @@ import (
 
 	"github.com/ambiyansyah-risyal/go-base-app/pkg/config"
 	"github.com/ambiyansyah-risyal/go-base-app/pkg/logger"
-	_ "github.com/mattn/go-sqlite3" // SQLite driver
-	_ "github.com/lib/pq"          // PostgreSQL driver
 	_ "github.com/go-sql-driver/mysql" // MySQL driver
+	_ "github.com/lib/pq"              // PostgreSQL driver
+	_ "github.com/mattn/go-sqlite3"    // SQLite driver
 )
 
 // NewConnection creates a new database connection
@@ -60,17 +60,17 @@ func NewConnection(cfg config.DatabaseConfig, log *logger.Logger) (*sql.DB, erro
 // GetDatabaseStats returns database connection statistics
 func GetDatabaseStats(db *sql.DB) map[string]interface{} {
 	stats := db.Stats()
-	
+
 	return map[string]interface{}{
-		"max_open_connections":     stats.MaxOpenConnections,
-		"open_connections":         stats.OpenConnections,
-		"in_use":                  stats.InUse,
-		"idle":                    stats.Idle,
-		"wait_count":              stats.WaitCount,
-		"wait_duration":           stats.WaitDuration.String(),
-		"max_idle_closed":         stats.MaxIdleClosed,
-		"max_idle_time_closed":    stats.MaxIdleTimeClosed,
-		"max_lifetime_closed":     stats.MaxLifetimeClosed,
+		"max_open_connections": stats.MaxOpenConnections,
+		"open_connections":     stats.OpenConnections,
+		"in_use":               stats.InUse,
+		"idle":                 stats.Idle,
+		"wait_count":           stats.WaitCount,
+		"wait_duration":        stats.WaitDuration.String(),
+		"max_idle_closed":      stats.MaxIdleClosed,
+		"max_idle_time_closed": stats.MaxIdleTimeClosed,
+		"max_lifetime_closed":  stats.MaxLifetimeClosed,
 	}
 }
 
@@ -78,6 +78,6 @@ func GetDatabaseStats(db *sql.DB) map[string]interface{} {
 func HealthCheck(db *sql.DB) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	
+
 	return db.PingContext(ctx)
 }

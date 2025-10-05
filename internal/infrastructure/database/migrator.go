@@ -44,7 +44,7 @@ func (m *Migrator) Up() error {
 
 		// Run the migration
 		m.logger.Info("Applying migration", "version", migration.Version, "description", migration.Description)
-		
+
 		tx, err := m.db.Begin()
 		if err != nil {
 			return fmt.Errorf("failed to begin transaction: %w", err)
@@ -93,19 +93,19 @@ func (m *Migrator) createMigrationsTable() error {
 // migrationExists checks if a migration has been applied
 func (m *Migrator) migrationExists(version string) (bool, error) {
 	query := "SELECT COUNT(*) FROM migrations WHERE version = ?"
-	
+
 	var count int
 	if err := m.db.QueryRow(query, version).Scan(&count); err != nil {
 		return false, err
 	}
-	
+
 	return count > 0, nil
 }
 
 // recordMigration records that a migration has been applied
 func (m *Migrator) recordMigration(tx *sql.Tx, version, description string) error {
 	query := "INSERT INTO migrations (version, description) VALUES (?, ?)"
-	
+
 	_, err := tx.Exec(query, version, description)
 	return err
 }

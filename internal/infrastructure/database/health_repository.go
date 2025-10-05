@@ -35,10 +35,10 @@ func (r *healthRepository) Ping(ctx context.Context) error {
 // GetStats returns database statistics
 func (r *healthRepository) GetStats(ctx context.Context) (map[string]interface{}, error) {
 	stats := GetDatabaseStats(r.db)
-	
+
 	// Add additional database-specific statistics
 	stats["ping_ok"] = true
-	
+
 	// Try to get database version or other metadata
 	var version string
 	if err := r.db.QueryRowContext(ctx, "SELECT sqlite_version()").Scan(&version); err == nil {

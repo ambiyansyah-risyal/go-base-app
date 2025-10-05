@@ -39,24 +39,25 @@ func main() {
 	migrator := database.NewMigrator(db, log)
 
 	// Determine command
-	command := "up"
+	const defaultCommand = "up"
+	command := defaultCommand
 	if len(os.Args) > 1 {
 		command = os.Args[1]
 	}
 
 	switch command {
-	case "up":
+	case defaultCommand:
 		if err := migrator.Up(); err != nil {
 			log.Error("Migration failed", "error", err)
 			os.Exit(1)
 		}
 		log.Info("Migrations completed successfully")
-	
+
 	case "version":
 		fmt.Printf("Go Base App Migration Tool\n")
 		fmt.Printf("Version: %s\n", Version)
 		fmt.Printf("Build Time: %s\n", BuildTime)
-	
+
 	default:
 		fmt.Printf("Usage: %s [up|version]\n", os.Args[0])
 		fmt.Printf("  up      Run pending migrations\n")

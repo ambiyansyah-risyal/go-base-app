@@ -102,12 +102,12 @@ func main() {
 				log.Error("HTTPS enabled but TLS certificate or key file not specified")
 				os.Exit(1)
 			}
-			
+
 			log.Info("Starting HTTPS server",
 				"cert_file", cfg.Security.TLSCertFile,
 				"key_file", cfg.Security.TLSKeyFile,
 			)
-			
+
 			if err := server.ListenAndServeTLS(cfg.Security.TLSCertFile, cfg.Security.TLSKeyFile); err != nil && err != http.ErrServerClosed {
 				log.Error("Failed to start HTTPS server", "error", err)
 				os.Exit(1)

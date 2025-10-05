@@ -18,13 +18,13 @@ import (
 
 // App represents the application
 type App struct {
-	config     *config.Config
-	logger     *logger.Logger
-	db         *sql.DB
-	router     *gin.Engine
-	validator  *validator.Validator
-	usecases   *usecase.Usecases
-	handlers   *handler.Handlers
+	config    *config.Config
+	logger    *logger.Logger
+	db        *sql.DB
+	router    *gin.Engine
+	validator *validator.Validator
+	usecases  *usecase.Usecases
+	handlers  *handler.Handlers
 }
 
 // NewApp creates a new application instance

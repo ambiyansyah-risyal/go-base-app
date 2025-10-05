@@ -62,6 +62,6 @@ func (u *healthUsecase) IsReady(ctx context.Context) bool {
 		u.logger.Warn("Readiness check failed", "error", err)
 		return false
 	}
-	
+
 	return true
 }

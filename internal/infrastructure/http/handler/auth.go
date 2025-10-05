@@ -77,7 +77,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 			})
 			return
 		}
-		
+
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "Invalid request data",
 			"code":  "INVALID_REQUEST_DATA",
@@ -90,7 +90,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	if err != nil {
 		clientIP := c.ClientIP()
 		h.logger.AuthLog("login", "", clientIP, false, err.Error())
-		
+
 		if err == entity.ErrInvalidCredentials || err == entity.ErrUserNotFound {
 			c.JSON(http.StatusUnauthorized, gin.H{
 				"error": "Invalid email or password",
@@ -98,7 +98,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 			})
 			return
 		}
-		
+
 		if err == entity.ErrUserInactive {
 			c.JSON(http.StatusUnauthorized, gin.H{
 				"error": "Account is inactive",
@@ -111,7 +111,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 			"email":     req.Email,
 			"client_ip": clientIP,
 		})
-		
+
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Login failed",
 			"code":  "INTERNAL_ERROR",
@@ -163,7 +163,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 			})
 			return
 		}
-		
+
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "Invalid request data",
 			"code":  "INVALID_REQUEST_DATA",
@@ -181,7 +181,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 			})
 			return
 		}
-		
+
 		if err == entity.ErrUserUsernameExists {
 			c.JSON(http.StatusConflict, gin.H{
 				"error": "Username already exists",
@@ -194,7 +194,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 			"email":    req.Email,
 			"username": req.Username,
 		})
-		
+
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Registration failed",
 			"code":  "INTERNAL_ERROR",
@@ -279,7 +279,7 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 	// 1. Get the user ID from the JWT token
 	// 2. Invalidate the tokens (add to blacklist or remove from database)
 	// 3. Log the logout event
-	
+
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Logout successful",
 	})
@@ -301,7 +301,7 @@ func (h *AuthHandler) GetCurrentUser(c *gin.Context) {
 	// 1. Extract user ID from the JWT token in the Authorization header
 	// 2. Fetch the user from the database
 	// 3. Return the user information
-	
+
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Get current user endpoint - requires authentication middleware",
 		"note":    "This endpoint needs JWT authentication middleware to be implemented",

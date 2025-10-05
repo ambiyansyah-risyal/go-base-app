@@ -49,37 +49,37 @@ func NewUserHandler(userUsecase usecase.UserUsecase, log *logger.Logger, validat
 func (h *UserHandler) List(c *gin.Context) {
 	// Parse query parameters
 	filter := entity.DefaultUserFilter()
-	
+
 	if email := c.Query("email"); email != "" {
 		filter.Email = email
 	}
-	
+
 	if username := c.Query("username"); username != "" {
 		filter.Username = username
 	}
-	
+
 	if isActiveStr := c.Query("is_active"); isActiveStr != "" {
 		if isActive, err := strconv.ParseBool(isActiveStr); err == nil {
 			filter.IsActive = &isActive
 		}
 	}
-	
+
 	if limitStr := c.Query("limit"); limitStr != "" {
 		if limit, err := strconv.Atoi(limitStr); err == nil && limit > 0 && limit <= 100 {
 			filter.Limit = limit
 		}
 	}
-	
+
 	if offsetStr := c.Query("offset"); offsetStr != "" {
 		if offset, err := strconv.Atoi(offsetStr); err == nil && offset >= 0 {
 			filter.Offset = offset
 		}
 	}
-	
+
 	if sortBy := c.Query("sort_by"); sortBy != "" {
 		filter.SortBy = sortBy
 	}
-	
+
 	if sortDescStr := c.Query("sort_desc"); sortDescStr != "" {
 		if sortDesc, err := strconv.ParseBool(sortDescStr); err == nil {
 			filter.SortDesc = sortDesc
@@ -92,7 +92,7 @@ func (h *UserHandler) List(c *gin.Context) {
 		h.logger.ErrorWithContext("Failed to list users", err, map[string]any{
 			"filter": filter,
 		})
-		
+
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to list users",
 			"code":  "INTERNAL_ERROR",
@@ -131,7 +131,7 @@ func (h *UserHandler) List(c *gin.Context) {
 // @Router /api/v1/users/{id} [get]
 func (h *UserHandler) GetByID(c *gin.Context) {
 	idStr := c.Param("id")
-	
+
 	userID, err := uuid.Parse(idStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -154,7 +154,7 @@ func (h *UserHandler) GetByID(c *gin.Context) {
 		h.logger.ErrorWithContext("Failed to get user", err, map[string]any{
 			"user_id": userID,
 		})
-		
+
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to get user",
 			"code":  "INTERNAL_ERROR",
@@ -181,7 +181,7 @@ func (h *UserHandler) GetByID(c *gin.Context) {
 // @Router /api/v1/users/{id} [put]
 func (h *UserHandler) Update(c *gin.Context) {
 	idStr := c.Param("id")
-	
+
 	userID, err := uuid.Parse(idStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -210,7 +210,7 @@ func (h *UserHandler) Update(c *gin.Context) {
 			})
 			return
 		}
-		
+
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "Invalid request data",
 			"code":  "INVALID_REQUEST_DATA",
@@ -232,7 +232,7 @@ func (h *UserHandler) Update(c *gin.Context) {
 			"user_id": userID,
 			"request": req,
 		})
-		
+
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to update user",
 			"code":  "INTERNAL_ERROR",
@@ -258,7 +258,7 @@ func (h *UserHandler) Update(c *gin.Context) {
 // @Router /api/v1/users/{id} [delete]
 func (h *UserHandler) Delete(c *gin.Context) {
 	idStr := c.Param("id")
-	
+
 	userID, err := uuid.Parse(idStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -281,7 +281,7 @@ func (h *UserHandler) Delete(c *gin.Context) {
 		h.logger.ErrorWithContext("Failed to delete user", err, map[string]any{
 			"user_id": userID,
 		})
-		
+
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to delete user",
 			"code":  "INTERNAL_ERROR",

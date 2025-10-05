@@ -33,7 +33,7 @@ func NewHealthHandler(healthUsecase usecase.HealthUsecase, log *logger.Logger) *
 // @Router /health [get]
 func (h *HealthHandler) Health(c *gin.Context) {
 	health := h.healthUsecase.GetHealth(c.Request.Context())
-	
+
 	statusCode := http.StatusOK
 	if health["status"] != "ok" {
 		statusCode = http.StatusServiceUnavailable

@@ -128,7 +128,7 @@ func (a *authUsecase) RefreshTokens(ctx context.Context, refreshToken string) (*
 	// 3. Get user from database
 	// 4. Generate new tokens
 	// 5. Optionally invalidate the old refresh token
-	
+
 	// For now, return an error indicating not implemented
 	return nil, nil, entity.ErrNotImplemented
 }
@@ -140,7 +140,7 @@ func (a *authUsecase) ValidateToken(ctx context.Context, token string) (*entity.
 	// 2. Extract user ID from token claims
 	// 3. Get user from database
 	// 4. Check if user is still active
-	
+
 	// For now, return an error indicating not implemented
 	return nil, entity.ErrNotImplemented
 }
@@ -151,7 +151,7 @@ func (a *authUsecase) Logout(ctx context.Context, userID uuid.UUID) error {
 	// 1. Add tokens to a blacklist
 	// 2. Or remove refresh tokens from database
 	// 3. Log the logout event
-	
+
 	a.logger.Info("User logged out", "user_id", userID)
 	return nil
 }
@@ -163,16 +163,16 @@ func (a *authUsecase) generateTokens(user *entity.User) (*AuthTokens, error) {
 	// 2. Create JWT refresh token with longer expiration
 	// 3. Sign tokens with secret key
 	// 4. Store refresh token in database (optional)
-	
+
 	// For demonstration purposes, return mock tokens
 	now := time.Now()
 	expiresIn := int64(24 * time.Hour / time.Second) // 24 hours in seconds
-	
+
 	tokens := &AuthTokens{
 		AccessToken:  fmt.Sprintf("mock_access_token_%s_%d", user.ID.String(), now.Unix()),
 		RefreshToken: fmt.Sprintf("mock_refresh_token_%s_%d", user.ID.String(), now.Unix()),
 		ExpiresIn:    expiresIn,
 	}
-	
+
 	return tokens, nil
 }

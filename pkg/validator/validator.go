@@ -38,7 +38,7 @@ func New() *Validator {
 func (v *Validator) Validate(s interface{}) error {
 	if err := v.validator.Struct(s); err != nil {
 		var validationErrors entity.ValidationErrors
-		
+
 		if validatorErrors, ok := err.(validator.ValidationErrors); ok {
 			for _, validatorError := range validatorErrors {
 				validationErrors.Add(
@@ -62,8 +62,8 @@ func (v *Validator) ValidateVar(field interface{}, tag string) error {
 }
 
 // RegisterCustomValidator registers a custom validation function
-func (v *Validator) RegisterCustomValidator(tag string, fn validator.Func) {
-	v.validator.RegisterValidation(tag, fn)
+func (v *Validator) RegisterCustomValidator(tag string, fn validator.Func) error {
+	return v.validator.RegisterValidation(tag, fn)
 }
 
 // getErrorMessage returns a human-readable error message for validation errors
@@ -113,7 +113,7 @@ func getErrorMessage(fe validator.FieldError) string {
 // registerCustomValidators registers custom validation functions
 func registerCustomValidators(v *validator.Validate) {
 	// Password validator: at least 8 chars, 1 upper, 1 lower, 1 digit, 1 special
-	v.RegisterValidation("password", func(fl validator.FieldLevel) bool {
+	_ = v.RegisterValidation("password", func(fl validator.FieldLevel) bool {
 		password := fl.Field().String()
 		if len(password) < 8 {
 			return false
@@ -141,12 +141,12 @@ func registerCustomValidators(v *validator.Validate) {
 	})
 
 	// Username validator: alphanumeric, underscore, hyphen only
-	v.RegisterValidation("username", func(fl validator.FieldLevel) bool {
+	_ = v.RegisterValidation("username", func(fl validator.FieldLevel) bool {
 		username := fl.Field().String()
 		for _, char := range username {
-			if !((char >= 'a' && char <= 'z') || 
-				(char >= 'A' && char <= 'Z') || 
-				(char >= '0' && char <= '9') || 
+			if !((char >= 'a' && char <= 'z') ||
+				(char >= 'A' && char <= 'Z') ||
+				(char >= '0' && char <= '9') ||
 				char == '_' || char == '-') {
 				return false
 			}
@@ -155,14 +155,14 @@ func registerCustomValidators(v *validator.Validate) {
 	})
 
 	// Phone validator: basic phone number validation
-	v.RegisterValidation("phone", func(fl validator.FieldLevel) bool {
+	_ = v.RegisterValidation("phone", func(fl validator.FieldLevel) bool {
 		phone := fl.Field().String()
 		// Simple regex-like validation for phone numbers
 		// In production, use a proper phone number validation library
 		if len(phone) < 10 || len(phone) > 15 {
 			return false
 		}
-		
+
 		for _, char := range phone {
 			if !((char >= '0' && char <= '9') || char == '+' || char == '-' || char == ' ' || char == '(' || char == ')') {
 				return false
@@ -188,13 +188,13 @@ func ValidateUpdateUserRequest(req *entity.UpdateUserRequest) error {
 const (
 	// EmailPattern is a basic email validation pattern
 	EmailPattern = `^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`
-	
+
 	// PasswordPattern is a strong password pattern
 	PasswordPattern = `^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$`
-	
+
 	// UsernamePattern allows alphanumeric, underscore, and hyphen
 	UsernamePattern = `^[a-zA-Z0-9_-]+$`
-	
+
 	// PhonePattern is a basic phone number pattern
 	PhonePattern = `^[\+]?[1-9][\d]{0,15}$`
 )
