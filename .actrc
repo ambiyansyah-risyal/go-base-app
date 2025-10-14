@@ -1,0 +1,5 @@
+# act configuration for local CI testing
+-P ubuntu-latest=catthehacker/ubuntu:act-latest
+--artifact-server-path /tmp/act-artifacts
+--env GOPROXY=direct
+--env GOSUMDB=off
