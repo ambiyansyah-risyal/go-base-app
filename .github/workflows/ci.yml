@@ -7,14 +7,14 @@ on:
     branches: [ main, develop ]
 
 env:
-  GO_VERSION: '1.22'
+  GO_VERSION: '1.24'
 
 jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
 
     - name: Set up Go
       uses: actions/setup-go@v5
@@ -34,8 +34,9 @@ jobs:
 
     - name: Create basic test files
       run: |
-        # Create basic test file to ensure tests can run
-        cat > pkg/config/config_test.go << 'TESTEOF'
+        # Create basic test file to ensure tests can run (skip if exists)
+        if [ ! -f pkg/config/config_test.go ]; then
+          cat > pkg/config/config_test.go << 'TESTEOF'
         package config
         
         import "testing"
@@ -50,16 +51,25 @@ jobs:
             }
         }
         TESTEOF
+        fi
 
     - name: Run tests
       run: go test -v -race -coverprofile=coverage.out ./...
+
+    - name: Upload test coverage to Codecov
+      uses: codecov/codecov-action@v5
+      if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+      with:
+        file: ./coverage.out
+        flags: unittests
+        name: codecov-umbrella
 
   build:
     name: Build
     runs-on: ubuntu-latest
     needs: [test]
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
 
     - name: Set up Go
       uses: actions/setup-go@v5
@@ -101,12 +111,50 @@ jobs:
       with:
         name: binaries
         path: bin/
+        retention-days: 30
+
+  docker:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    needs: [test, build, lint]
+    steps:
+    - uses: actions/checkout@v5
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v4
+
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v6
+      with:
+        images: go-base-app
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=sha,prefix={{branch}}-
+          type=raw,value=latest,enable={{is_default_branch}}
+
+    - name: Build Docker image
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        platforms: linux/amd64
+        push: false
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    - name: Test Docker image
+      run: |
+        docker run --rm go-base-app:${{ github.sha }} ./go-base-app-cli version
 
   lint:
     name: Lint
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     
     - name: Set up Go
       uses: actions/setup-go@v5
@@ -118,3 +166,39 @@ jobs:
       with:
         version: latest
         args: --timeout=10m --issues-exit-code=0
+
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v5
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ env.GO_VERSION }}
+
+    - name: Run Gosec Security Scanner
+      uses: securecodewarrior/github-action-gosec@master
+      with:
+        args: '-no-fail -fmt sarif -out gosec.sarif ./...'
+
+    - name: Upload SARIF file to GitHub Security Tab
+      uses: github/codeql-action/upload-sarif@v3
+      if: always()
+      with:
+        sarif_file: gosec.sarif
+
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v3
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'
