@@ -33,6 +33,9 @@ import (
 	"github.com/ambiyansyah-risyal/go-base-app/pkg/config"
 	"github.com/ambiyansyah-risyal/go-base-app/pkg/logger"
 	"github.com/gin-gonic/gin"
+
+	// Import generated docs for swagger
+	_ "github.com/ambiyansyah-risyal/go-base-app/docs"
 )
 
 // Version information (set by build)

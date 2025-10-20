@@ -119,47 +119,86 @@ make dev
 # This uses Air for hot reloading during development
 ```
 
-## API Endpoints
+## API Documentation
 
-### Health Checks
-- `GET /health` - Application health status
-- `GET /healthz` - Kubernetes health check
-- `GET /livez` - Liveness probe
-- `GET /readyz` - Readiness probe
+This application features **auto-generated OpenAPI/Swagger documentation** that's always up-to-date with the code. No more manually maintaining API docs!
 
-### Authentication
-- `POST /api/v1/auth/register` - User registration
-- `POST /api/v1/auth/login` - User login
-- `POST /api/v1/auth/logout` - User logout
-- `POST /api/v1/auth/refresh` - Refresh access token
-- `GET /api/v1/auth/me` - Get current user
+### 📚 Interactive API Documentation
 
-### Users
-- `GET /api/v1/users` - List users (with pagination/filtering)
-- `GET /api/v1/users/{id}` - Get user by ID
-- `PUT /api/v1/users/{id}` - Update user
-- `DELETE /api/v1/users/{id}` - Delete user (soft delete)
+Once the server is running, you can explore the complete API documentation at:
 
-### Documentation
-- `GET /docs` - Swagger UI documentation
-- `GET /swagger` - Alternative Swagger endpoint
+- **Swagger UI**: http://localhost:8080/swagger/index.html
+- **Alternative endpoint**: http://localhost:8080/docs/index.html  
+- **OpenAPI JSON**: http://localhost:8080/swagger/doc.json
 
-## Example Usage
+![Swagger UI Screenshot](https://github.com/user-attachments/assets/f249136d-bf81-4eb6-89d0-aa4845ddf671)
 
-### Register a new user:
+### ✨ Features of Auto-Generated Documentation
+
+- **Always Current**: Documentation is generated from code annotations, so it's never out of sync
+- **Interactive Testing**: Test API endpoints directly from the browser
+- **Complete Schemas**: Full request/response models with validation rules
+- **Authentication Support**: Built-in support for Bearer token authentication
+- **Search & Filter**: Easy navigation through endpoints by tags
+
+### 🔄 Regenerating Documentation
+
+The documentation is automatically included when building the application. To manually regenerate:
+
+```bash
+# Generate swagger documentation
+make docs
+
+# Or manually using swag CLI
+swag init -g ./cmd/api/main.go -o ./docs
+
+# Build with updated docs
+make docs-build
+
+# Start server with updated docs
+make docs-serve
+```
+
+### 📖 Available Endpoints Overview
+
+The API provides the following main endpoint groups:
+
+- **🔐 Authentication** (`/api/v1/auth/*`) - User registration, login, token management
+- **👥 Users** (`/api/v1/users/*`) - User management with full CRUD operations  
+- **🩺 Health** (`/health*`) - Application and database health monitoring
+- **📚 Documentation** (`/docs`, `/swagger`) - This interactive documentation
+
+For detailed endpoint specifications, request/response schemas, and testing, visit the Swagger UI when the server is running.
+
+## Quick API Testing
+
+### 🚀 Interactive Testing (Recommended)
+
+The easiest way to test the API is through the **interactive Swagger UI**:
+
+1. Start the server: `make run-api` or `./bin/go-base-app-api`
+2. Open your browser to: http://localhost:8080/swagger/index.html
+3. Click "Authorize" to add Bearer token if needed
+4. Expand any endpoint and click "Try it out" to test directly
+
+### 🔧 Command Line Examples
+
+For automation or scripting, here are some curl examples:
+
+#### Register a new user:
 ```bash
 curl -X POST http://localhost:8080/api/v1/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "email": "user@example.com",
-    "username": "johndoe",
+    "username": "johndoe", 
     "password": "SecurePass123!",
     "first_name": "John",
     "last_name": "Doe"
   }'
 ```
 
-### Login:
+#### Login:
 ```bash
 curl -X POST http://localhost:8080/api/v1/auth/login \
   -H "Content-Type: application/json" \
@@ -169,10 +208,12 @@ curl -X POST http://localhost:8080/api/v1/auth/login \
   }'
 ```
 
-### List users:
+#### Check application health:
 ```bash
-curl http://localhost:8080/api/v1/users?limit=10&offset=0
+curl http://localhost:8080/health
 ```
+
+💡 **Tip**: All request/response schemas, validation rules, and examples are available in the interactive Swagger documentation!
 
 ## Configuration
 
@@ -226,9 +267,11 @@ make build             # Build all applications
 make test              # Run tests
 make lint              # Run linter
 make dev               # Start development server
+make docs              # Generate API documentation
+make docs-build        # Generate docs and build applications
+make docs-serve        # Generate docs and serve API with Swagger UI
 make clean             # Clean build artifacts
 make docker-build      # Build Docker image
-make docs              # Generate API documentation
 ```
 
 ### Adding New Features
@@ -239,6 +282,30 @@ make docs              # Generate API documentation
 4. **Add Use Case**: Implement business logic in `internal/usecase/`
 5. **Add HTTP Handler**: Create handlers in `internal/infrastructure/http/handler/`
 6. **Update Routes**: Add routes in `internal/infrastructure/http/router/`
+7. **📝 Document API**: Add Swagger annotations to new endpoints (see existing handlers for examples)
+
+#### 📝 API Documentation Guidelines
+
+When adding new API endpoints, always include Swagger annotations:
+
+```go
+// CreateWidget godoc
+// @Summary Create a new widget
+// @Description Create a new widget with the provided data
+// @Tags widgets
+// @Accept json
+// @Produce json
+// @Param request body CreateWidgetRequest true "Widget data"
+// @Success 201 {object} Widget "Widget created successfully"
+// @Failure 400 {object} map[string]interface{} "Bad request"
+// @Security BearerAuth
+// @Router /api/v1/widgets [post]
+func (h *WidgetHandler) Create(c *gin.Context) {
+    // Implementation...
+}
+```
+
+The documentation is automatically regenerated during build, keeping it always in sync with your code!
 
 ## Testing
 

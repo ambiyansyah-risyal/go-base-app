@@ -18,6 +18,8 @@ install-tools: ## Install development tools
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 	go install github.com/swaggo/swag/cmd/swag@latest
 	go install github.com/air-verse/air@latest
+	@echo "Tools installed to $(shell go env GOPATH)/bin/"
+	@echo "Make sure $(shell go env GOPATH)/bin is in your PATH"
 
 deps: ## Download dependencies
 	go mod download
@@ -78,7 +80,14 @@ lint: ## Run linter
 
 # Documentation
 docs: ## Generate API documentation
-	swag init -g ./cmd/api/main.go -o ./docs
+	$(shell go env GOPATH)/bin/swag init -g ./cmd/api/main.go -o ./docs
+
+docs-build: docs build ## Generate docs and build applications
+	@echo "Documentation and applications built successfully"
+
+docs-serve: docs build-api ## Generate docs and serve API with Swagger UI
+	@echo "Starting API server with Swagger documentation at http://localhost:8080/docs/"
+	./bin/$(APP_NAME)-api
 
 # Cleanup
 clean: ## Clean build artifacts
