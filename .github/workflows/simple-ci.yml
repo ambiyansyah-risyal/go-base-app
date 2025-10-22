@@ -39,6 +39,11 @@ jobs:
         go mod download
         go mod verify
         
+    - name: Install swag and generate docs
+      run: |
+        go install github.com/swaggo/swag/cmd/swag@latest
+        $(go env GOPATH)/bin/swag init -g ./cmd/api/main.go -o ./docs
+        
     - name: Run tests
       run: |
         echo "Running tests..."

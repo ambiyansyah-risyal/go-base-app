@@ -80,6 +80,12 @@ jobs:
     - name: Install dependencies
       run: go mod download
 
+    - name: Install swag for docs generation
+      run: go install github.com/swaggo/swag/cmd/swag@latest
+
+    - name: Generate API documentation
+      run: $(go env GOPATH)/bin/swag init -g ./cmd/api/main.go -o ./docs
+
     - name: Build applications
       env:
         CGO_ENABLED: 1

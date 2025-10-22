@@ -34,7 +34,7 @@ import (
 	"github.com/ambiyansyah-risyal/go-base-app/pkg/logger"
 	"github.com/gin-gonic/gin"
 
-	// Import generated docs for swagger
+	// Import generated docs for swagger (conditional import)
 	_ "github.com/ambiyansyah-risyal/go-base-app/docs"
 )
 

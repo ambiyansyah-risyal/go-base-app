@@ -14,13 +14,18 @@ fi
 # Test workflow structure
 echo ""
 echo "2. Testing workflow structure..."
-if ./bin/act --list > /dev/null 2>&1; then
-    echo "✅ Workflow structure is valid"
-    ./bin/act --list
+if which act > /dev/null 2>&1; then
+    if act --list > /dev/null 2>&1; then
+        echo "✅ Workflow structure is valid"
+        act --list
+    else
+        echo "❌ Workflow structure error"
+        act --list
+        exit 1
+    fi
 else
-    echo "❌ Workflow structure error"
-    ./bin/act --list
-    exit 1
+    echo "⚠️  Act tool not found, skipping workflow validation"
+    echo "   Install with: curl https://raw.githubusercontent.com/nektos/act/master/install.sh | sudo bash"
 fi
 
 echo ""
@@ -32,12 +37,22 @@ else
 fi
 
 echo ""
-echo "4. Testing local builds..."
-if go build ./cmd/... > /dev/null 2>&1; then
+echo "4. Testing docs generation..."
+if make docs > /dev/null 2>&1; then
+    echo "✅ Documentation generation successful"
+else
+    echo "❌ Documentation generation failed"
+    make docs
+    exit 1
+fi
+
+echo ""
+echo "5. Testing local builds..."
+if make build > /dev/null 2>&1; then
     echo "✅ Local builds successful"
 else
     echo "❌ Local builds failed"
-    go build ./cmd/...
+    make build
     exit 1
 fi
 

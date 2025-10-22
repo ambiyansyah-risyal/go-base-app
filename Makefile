@@ -29,13 +29,13 @@ tidy: ## Tidy up dependencies
 	go mod tidy
 
 # Build
-build: ## Build all applications
+build: docs ## Build all applications (with docs generation)
 	@echo "Building applications..."
 	go build $(LDFLAGS) -o bin/$(APP_NAME)-api ./cmd/api
 	go build $(LDFLAGS) -o bin/$(APP_NAME)-cli ./cmd/cli
 	go build $(LDFLAGS) -o bin/$(APP_NAME)-migrate ./cmd/migrate
 
-build-api: ## Build API server
+build-api: docs ## Build API server (with docs generation)
 	go build $(LDFLAGS) -o bin/$(APP_NAME)-api ./cmd/api
 
 build-cli: ## Build CLI application
@@ -58,7 +58,7 @@ migrate: build-migrate ## Run database migrations
 	./bin/$(APP_NAME)-migrate up
 
 # Testing
-test: ## Run tests
+test: docs ## Run tests (with docs generation)
 	go test -v -race -coverprofile=coverage.out ./...
 
 test-integration: ## Run integration tests
@@ -80,7 +80,11 @@ lint: ## Run linter
 
 # Documentation
 docs: ## Generate API documentation
+	@echo "Ensuring swag tool is installed..."
+	@which $(shell go env GOPATH)/bin/swag >/dev/null 2>&1 || go install github.com/swaggo/swag/cmd/swag@latest
+	@echo "Generating API documentation..."
 	$(shell go env GOPATH)/bin/swag init -g ./cmd/api/main.go -o ./docs
+	@echo "Documentation generated successfully"
 
 docs-build: docs build ## Generate docs and build applications
 	@echo "Documentation and applications built successfully"
