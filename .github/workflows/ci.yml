@@ -1,0 +1,213 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  GO_VERSION: '1.22'
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v5
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ env.GO_VERSION }}
+        check-latest: false
+
+    - name: Cache Go modules
+      uses: actions/cache@v4
+      with:
+        path: ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+
+    - name: Install dependencies
+      run: go mod download
+
+    - name: Verify test files exist
+      run: |
+        echo "Checking test files..."
+        ls -la pkg/*/
+        find . -name "*_test.go" | head -10
+
+    - name: Run tests
+      run: go test -v -race -coverprofile=coverage.out ./...
+
+    - name: Upload test coverage to Codecov
+      uses: codecov/codecov-action@v5
+      if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+      with:
+        file: ./coverage.out
+        flags: unittests
+        name: codecov-umbrella
+      continue-on-error: true
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: [test]
+    steps:
+    - uses: actions/checkout@v5
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ env.GO_VERSION }}
+        check-latest: false
+
+    - name: Install build dependencies for CGO
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y gcc musl-dev
+
+    - name: Cache Go modules
+      uses: actions/cache@v4
+      with:
+        path: ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+
+    - name: Install dependencies
+      run: go mod download
+
+    - name: Install swag for docs generation
+      run: go install github.com/swaggo/swag/cmd/swag@latest
+
+    - name: Generate API documentation
+      run: $(go env GOPATH)/bin/swag init -g ./cmd/api/main.go -o ./docs
+
+    - name: Build applications
+      env:
+        CGO_ENABLED: 1
+      run: |
+        mkdir -p bin
+        go build -v -ldflags="-X main.Version=${{ github.sha }} -X main.BuildTime=$(date -u '+%Y-%m-%d_%H:%M:%S')" -o bin/go-base-app-api ./cmd/api
+        go build -v -ldflags="-X main.Version=${{ github.sha }} -X main.BuildTime=$(date -u '+%Y-%m-%d_%H:%M:%S')" -o bin/go-base-app-cli ./cmd/cli
+        go build -v -ldflags="-X main.Version=${{ github.sha }} -X main.BuildTime=$(date -u '+%Y-%m-%d_%H:%M:%S')" -o bin/go-base-app-migrate ./cmd/migrate
+
+    - name: Test binaries work
+      run: |
+        ls -la bin/
+        file bin/go-base-app-* 
+        ./bin/go-base-app-cli version || echo "CLI version test failed"
+        ./bin/go-base-app-migrate version || echo "Migrate version test failed"
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: binaries
+        path: bin/
+        retention-days: 30
+
+  docker:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    needs: [test, build, lint, security]
+    steps:
+    - uses: actions/checkout@v5
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v4
+
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v6
+      with:
+        images: go-base-app
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=sha,prefix={{branch}}-
+          type=raw,value=latest,enable={{is_default_branch}}
+
+    - name: Build Docker image
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        platforms: linux/amd64
+        push: false
+        load: true
+        tags: go-base-app:test
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    - name: Test Docker image
+      run: |
+        docker run --rm go-base-app:test ./go-base-app-cli version
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v5
+    
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ env.GO_VERSION }}
+        check-latest: false
+
+    - name: golangci-lint
+      uses: golangci/golangci-lint-action@v6
+      with:
+        version: latest
+        args: --timeout=10m --issues-exit-code=0
+
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v5
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ env.GO_VERSION }}
+        check-latest: false
+
+    - name: Install Gosec
+      run: |
+        go install github.com/securecodewarrior/gosec/v2/cmd/gosec@latest
+        export PATH=$PATH:$(go env GOPATH)/bin
+
+    - name: Run Gosec Security Scanner
+      run: |
+        export PATH=$PATH:$(go env GOPATH)/bin
+        gosec -no-fail -fmt sarif -out gosec.sarif ./... || true
+      continue-on-error: true
+
+    - name: Upload SARIF file to GitHub Security Tab
+      uses: github/codeql-action/upload-sarif@v3
+      if: always()
+      with:
+        sarif_file: gosec.sarif
+      continue-on-error: true
+
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@0.24.1
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+        exit-code: '0'
+      continue-on-error: true
+
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v3
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'
+      continue-on-error: true

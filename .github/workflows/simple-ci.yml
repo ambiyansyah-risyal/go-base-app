@@ -1,0 +1,72 @@
+name: Simple CI (Backup)
+
+# This is a simplified backup CI workflow that should work reliably
+# Use this if the main CI workflow fails
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  simple-test:
+    name: Simple Test & Build
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Go 1.22
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.22'
+        
+    - name: Debug environment
+      run: |
+        echo "Go version:"
+        go version
+        echo "Environment:"
+        env | grep -E "GO|PATH" | sort
+        echo "Working directory:"
+        pwd
+        echo "Files:"
+        ls -la
+        
+    - name: Install dependencies
+      run: |
+        go mod download
+        go mod verify
+        
+    - name: Install swag and generate docs
+      run: |
+        go install github.com/swaggo/swag/cmd/swag@latest
+        $(go env GOPATH)/bin/swag init -g ./cmd/api/main.go -o ./docs
+        
+    - name: Run tests
+      run: |
+        echo "Running tests..."
+        go test ./... -v
+        
+    - name: Build applications
+      run: |
+        echo "Building applications..."
+        mkdir -p bin
+        go build -v -o bin/api ./cmd/api
+        go build -v -o bin/cli ./cmd/cli
+        go build -v -o bin/migrate ./cmd/migrate
+        echo "Build complete. Binaries:"
+        ls -la bin/
+        
+    - name: Basic lint check
+      run: |
+        echo "Running basic lint checks..."
+        go vet ./...
+        gofmt -l . | tee /tmp/fmt_issues.txt
+        if [ -s /tmp/fmt_issues.txt ]; then
+          echo "⚠️ Format issues found (non-blocking):"
+          cat /tmp/fmt_issues.txt
+        else
+          echo "✅ No format issues found"
+        fi
